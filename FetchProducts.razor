@@ -1,0 +1,60 @@
+@page "/fetchproducts"
+@inject HttpClient Http
+@using System.Text.Json;
+
+<h3>Product List</h3>
+
+<ul>
+    //Copilot added another error message field to ensure the error message looked appealing.
+   @if (errorMessage != null)
+    {
+        <li style="color:red">@errorMessage</li>
+    }
+    else if (products != null)
+    {
+        foreach (var product in products)
+        {
+            <li>@product.Name - $@product.Price</li>
+        }
+    }
+    else
+    {
+        <li>Loading...</li>
+    }
+</ul>
+
+@code {
+    private Product[]? products;
+
+    //Copilot overhauled the error handling and implementation of Json Serialization and Deserialization, improving efficiency and operability.
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/productlist");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            products = JsonSerializer.Deserialize<Product[]>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (products == null)
+            {
+                errorMessage = "The server returned empty or invalid product data.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public double Price { get; set; }
+        public int Stock { get; set; }
+    }
+}
